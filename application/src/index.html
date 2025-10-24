@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Petit Chaperon Rouge</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <canvas class="webgl"></canvas>
+	<!-- Background music (will be played programmatically to respect autoplay rules) -->
+	<audio id="bg-music" src="/musique-fond.mp3" loop></audio>
+
+	<!-- Loading overlay -->
+	<div id="loader" class="loader">
+		<div class="loader-inner">
+			<img id="loader-spinner" src="/chargement.png" alt="spinner" />
+			<div class="loader-text">Chargement... <span id="loader-percent">0%</span></div>
+		</div>
+	</div>
+    <!-- Simple book container structure — kept minimal for user customization -->
+	<div class="container hidden">
+		<div class="livre">
+			<img src="/illustrations/livre.png" alt="" class="bg">
+			<div class="nav">
+				<img src="/illustrations/fermeture.png" alt="" class="close">
+				<!-- Volume control placed next to close button so it appears with the book -->
+				<div class="volume-control" id="volume-control" aria-label="Contrôle du volume">
+					<img id="volume-btn" src="/volume-on.png" alt="volume" />
+					<!-- single canonical slider for the book UI -->
+					<input id="volume-slider" type="range" min="0" max="100" value="40" />
+				</div>
+				<img src="/illustrations/fleche-gauche.png" alt="" class="fleche-gauche">
+				<img src="/illustrations/fleche-droite.png" alt="" class="fleche-droite">
+			</div>
+			<div class="page-image">
+			</div>
+			<div class="page-text">
+			</div>
+		</div>
+	</div>
+
+	<!-- (Removed duplicate global volume-control — the canonical slider lives inside the book nav) -->
+
+	<script type="module" src="./script.js"></script>
+</body>
+</html>

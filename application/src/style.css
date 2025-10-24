@@ -1,0 +1,580 @@
+/* Book layout: livre.png is the background, overlays sit above it */
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Delius&display=swap');
+
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+/* Colorful fantasy low-poly background behind the WebGL canvas */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0; /* behind canvas which is z-index:1 */
+    pointer-events: none;
+    /* darker, night-tinged palette so WebGL particles contrast better */
+    background-image: linear-gradient(160deg, #08121a 0%, #12202a 30%, #0c1a16 60%, #0d0b14 100%);
+    background-size: 200% 200%;
+    animation: bgFlow 16s ease-in-out infinite;
+}
+
+/* Expose the pastel palette as CSS variables so JS can sample and sync effects */
+:root {
+    /* darker base colors for scene background (CSS). JS can still sample these for subtle tinting if needed */
+    --bg1: #08121a; /* deep blue-black */
+    --bg2: #12202a; /* dark teal */
+    --bg3: #0c1a16; /* deep greenish */
+    --bg4: #0d0b14; /* deep violet-black */
+
+    /* Firefly palette: bright, warm tones for high contrast on dark background */
+    --firefly-1: #fffdf5;
+    --firefly-2: #fff5c2;
+    --firefly-3: #ffd9a8;
+    --firefly-4: #ffeecf;
+}
+
+/* Low-poly subtle overlay using SVG as a data-uri (tint + transparency) */
+body::after {
+    /* Removed low-poly SVG overlay to show only a smooth gradient background.
+       Keep a very subtle vignette to focus the scene center and add depth. */
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,0.02), rgba(0,0,0,0.25));
+    mix-blend-mode: normal;
+    opacity: 0.9;
+}
+
+@keyframes bgFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.webgl {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Quand le livre est ouvert, assombrir le canvas en arrière-plan */
+
+/* Assombrir uniquement le canvas en arrière-plan quand le livre est ouvert */
+
+/* Par défaut, la scène webgl est sombre */
+
+/* Par défaut, la scène webgl est normale */
+.webgl {
+    filter: none;
+    transition: filter 0.3s;
+}
+
+/* Quand le livre est ouvert, la scène webgl devient sombre */
+.container:not(.hidden) ~ .webgl,
+.container:not(.hidden) + .webgl,
+.container:not(.hidden) .webgl {
+    filter: brightness(0.4) grayscale(0.2) !important;
+}
+
+/* Overlay noir semi-transparent derrière le livre quand ouvert */
+
+/* Overlay noir derrière le livre, mais le livre reste lumineux au-dessus */
+.container:not(.hidden)::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.container:not(.hidden) .livre {
+    z-index: 3;
+    filter: none !important;
+}
+
+/* Container centers the book on screen */
+.container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* The book frame is a background image so overlays can sit above it */
+.livre {
+    position: relative;
+    width: min(1100px, 90%);
+    aspect-ratio: 1100 / 720; /* keep same proportion as livre.png */
+    max-height: 80vh; /* safety limit on very tall viewports */
+    background-image: url('/illustrations/livre.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%; /* ensure background exactly fills the container */
+}
+
+/* When showing the closed-cover as a background, avoid stretching it.
+   Use contain so the cover keeps its aspect ratio and is centered. */
+.livre.cover-mode {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: transparent !important;
+}
+
+/* Navigation positionnée en absolu par rapport au livre */
+.livre .nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* nav ne bloque pas le reste, sauf sur les boutons */
+    z-index: 10;
+}
+.livre .nav img {
+    position: absolute;
+    pointer-events: auto;
+    user-select: none;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+.livre .nav .close {
+    top: -9.3%;
+    left: 38%;
+    transform: translateX(-45%);
+    width: 48px;
+    height: 48px;
+}
+
+/* Volume control inside the book nav (hidden when book closed) */
+.livre .nav .volume-control {
+    display: none; /* visible only when the book is open */
+    position: absolute;
+    top: -6%;
+    left: 48%;
+    width: 12%;
+    transform: translateX(-55%);
+    z-index: 12;
+    align-items: center;
+    gap: 6px;
+    /* allow the volume control to receive pointer events even though
+       .livre .nav uses pointer-events:none to keep other areas inert */
+    pointer-events: auto;
+}
+
+
+.livre .nav .fleche-gauche {
+    top: 50%;
+    left: -7%;
+    transform: translateY(-50%);
+    width: 56px;
+    height: 56px;
+}
+.livre .nav .fleche-droite {
+    top: 50%;
+    right: -7%;
+    transform: translateY(-50%);
+    width: 56px;
+    height: 56px;
+}
+
+/* Position adjustments specifically for the cover (closed book) mode */
+.livre.cover-mode .nav .close {
+    top: -11%; /* move close button higher on cover */
+    left: 39%;
+    transform: translateX(-45%);
+}
+.livre.cover-mode .nav .volume-control {
+    top: -8%;
+    left: 49%;
+    transform: translateX(-55%);
+}
+
+/* Cover-mode: show a volume slider next to the volume icon */
+
+/* Cover-mode: visually styled volume slider placed to the LEFT of the volume icon */
+.livre.cover-mode .nav .volume-control { display: inline-flex; align-items: center; gap: 8px; }
+.livre.cover-mode .nav .volume-control input.cover-volume-slider {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px; /* put slider to the left of the icon */
+    width: 140px;
+    height: 6px;
+    position: relative;
+    left: 90%;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border-radius: 6px;
+}
+
+/* Ensure the volume control receives pointer events even if the parent nav
+   uses pointer-events:none elsewhere. Keep positioning as requested. */
+.livre .nav .volume-control input.cover-volume-slider {
+    pointer-events: auto;
+    display: inline-block; /* ensure visible in nav */
+    width: 140px;
+    height: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 50%), #b7b4ad var(--slider-fill, 50%), #b7b4ad 100%);
+    border-radius: 6px;
+}
+
+/* Track / thumb styling using provided palette: track #687f88, thumb #b7b4ad */
+.livre.cover-mode .nav .volume-control input.cover-volume-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    /* left filled color and right empty color driven by --slider-fill */
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 50%), #b7b4ad var(--slider-fill, 50%), #b7b4ad 100%);
+    border-radius: 6px;
+}
+.livre.cover-mode .nav .volume-control input.cover-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #b7b4ad;
+    margin-top: -5px; /* center the thumb vertically */
+    box-shadow: 0 0 6px rgba(183,180,173,0.45);
+    border: 2px solid rgba(255,255,255,0.06);
+}
+/* Firefox */
+.livre.cover-mode .nav .volume-control input.cover-volume-slider::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 50%), #b7b4ad var(--slider-fill, 50%), #b7b4ad 100%);
+    border-radius: 6px;
+}
+.livre.cover-mode .nav .volume-control input.cover-volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #b7b4ad;
+    border: none;
+}
+
+/* Hide any inline slider by default unless in cover-mode */
+.livre .nav .volume-control input.cover-volume-slider { display: none; }
+
+/* Global volume slider (outside the book) - allow JS-painted background to show */
+#volume-slider {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 140px;
+    height: 6px;
+    position: absolute;
+    left : 85%;
+    /* ensure the slider itself accepts pointer events when visible */
+    pointer-events: auto;
+    /* Use CSS variable for fill; JS will set --slider-fill on the element. Fallback to transparent. */
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 100%), #b7b4ad var(--slider-fill, 100%), #b7b4ad 100%);
+    border-radius: 6px;
+    vertical-align: middle;
+}
+#volume-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 100%), #b7b4ad var(--slider-fill, 100%), #b7b4ad 100%);
+    border-radius: 6px;
+}
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff; /* white knob */
+    margin-top: -5px; /* center the thumb vertically */
+    box-shadow: 0 0 6px rgba(0,0,0,0.25);
+    border: 2px solid rgba(0,0,0,0.06);
+    cursor: pointer;
+}
+/* Firefox */
+#volume-slider::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(90deg, #687f88 0%, #687f88 var(--slider-fill, 100%), #b7b4ad var(--slider-fill, 100%), #b7b4ad 100%);
+    border-radius: 6px;
+}
+#volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: none;
+    cursor: pointer;
+}
+
+@media (max-width: 720px) {
+    .livre.cover-mode .nav .volume-control input.cover-volume-slider { width: 96px }
+}
+.livre.cover-mode .nav .fleche-droite {
+    /* bring the right arrow inward so it's closer to the center on the narrower cover */
+    top: 50%;
+    right: 16%;
+    transform: translateY(-50%);
+    width: 64px;
+    height: 64px;
+}
+.livre.cover-mode .nav .fleche-gauche {
+    /* hide left arrow on cover (redundant) */
+    display: none !important;
+}
+
+.livre .bg { display: none; }
+
+/* Overlays sit absolutely on top of the livre background */
+.livre .page-image,
+.livre .page-text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+
+/* Credits page title */
+.credits-title {
+     font-size: 3rem;
+     color: #222;
+     margin: 0;
+     padding-left: 8px;
+     font-weight: 700;
+}
+
+/* Credits list styling */
+.credits-list {
+    margin: 18px 0 0 10px;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+    color: #222;
+}
+.credits-list li {
+    margin-bottom: 14px;
+}
+.credits-list li strong {
+    display: block; /* force label on its own line */
+    width: auto;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.credits-list li span {
+    display: block;
+    font-weight: 400;
+}
+/* Image on the RIGHT */
+.livre .page-image {
+    right: 9%;
+    width: 38%;
+    top: 47%;
+    height: 80%;
+    background: transparent;
+    padding: 0; /* allow image to fill fully */
+    display: block;
+    /* clip the illustration with an SVG mask so it appears "inside" the page */
+    overflow: hidden;
+    /* ensure overlay scales cleanly with the parent */
+    box-sizing: border-box;
+}
+
+.livre .page-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover; /* fill the masked area */
+    object-position: center center;
+    display: block;
+    z-index: 1;
+
+    /* courbe convexe en haut */
+    border-top-left-radius: 100% 5%;
+    border-top-right-radius: 100% 5%;
+    /* courbe en bas */
+
+    /* mask SVG : crée la courbe concave au bas (creuse au centre) */
+    -webkit-mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><rect width='100' height='100' fill='black'/><path d='M0 0 H100 V85 C80 50 20 50 0 85 Z' fill='white'/></svg>");
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><rect width='100' height='100' fill='black'/><path d='M0 0 H100 V85 C80 50 20 50 0 85 Z' fill='white'/></svg>");
+}
+
+/* Make right-side illustrations non-selectable and non-draggable */
+.livre .page-image img {
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    pointer-events: auto; /* still receive clicks when needed */
+}
+
+/* Text on the LEFT */
+.livre .page-text {
+    left: 13%;
+    width: 30%;
+    height: 78%;
+    top: 45%;
+    color: #222;
+    padding: 16px;
+    overflow-y: auto;
+    position: absolute;
+    border-top-left-radius: 100% 3%;
+    border-top-right-radius: 100% 3%;
+    font-family: 'Delius', 'Poppins', cursive, sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+}
+
+/* Page number displayed at the bottom center of the text area */
+.livre .page-text::after {
+    content: attr(data-page);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 10px;
+    font-size: 0.95rem;
+    color: rgba(34,34,34,0.9);
+    font-weight: 600;
+    pointer-events: none;
+    background: transparent;
+    padding: 0 6px;
+}
+
+@media (max-width: 720px) {
+    .livre .page-text::after { bottom: 8px; font-size: 0.9rem }
+}
+
+
+
+
+.hidden { display: none !important; }
+
+/* Top-left UI hint: shows an image instructing user to press X to open the book.
+   Visible only when the main book container is hidden. */
+.ui-open-hint {
+    position: fixed;
+    top: -6%;
+    left: 14px;
+    z-index: 11000; /* above loader and below book overlay */
+    width: 20vw;
+    height: auto;
+    pointer-events: none; /* don't block clicks */
+    opacity: 0.95;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.ui-open-hint.hidden { display: none !important; }
+
+@media (max-width: 720px) {
+    .ui-open-hint { width: 64px; top: 10px; left: 10px }
+}
+
+@media (max-width: 720px) {
+    .livre { width: 95%; /* height derives from aspect-ratio */ }
+    .livre .page-image, .livre .page-text { width: 44%; }
+}
+
+/* Loader overlay: image covers the whole viewport */
+#loader {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent; /* loader image will cover background */
+    color: #fff;
+    z-index: 10000;
+}
+
+/* Fade transition when hiding the loader */
+#loader { opacity: 1; transition: opacity 0.45s ease; }
+.loader-hidden { opacity: 0; pointer-events: none; }
+
+
+.livre .nav .volume-control img {
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+}
+
+@media (max-width: 720px) {
+    .livre .nav .volume-control { top: -4%; left: 50%; transform: translateX(-50%); }
+    .livre .nav .volume-control img { width: 44px; height: 44px }
+}
+
+/* Show volume control when container is visible (book open) */
+.container:not(.hidden) .livre .nav .volume-control {
+    display: flex;
+}
+
+#loader .loader-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fullscreen background image for loader */
+#loader img#loader-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+/* Spinner centered on screen */
+#loader img#loader-spinner {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    will-change: transform;
+}
+
+/* Loader text sits directly under the spinner (tightly attached) */
+#loader .loader-text {
+    position: absolute;
+    top: calc(50% + 82px); /* place just under spinner (spinner ~140px high -> half 70px + 12px gap) */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.6rem; /* larger */
+    font-weight: 700; /* bold */
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.65);
+}
+
+@media (max-width: 720px) {
+    /* on small screens, reduce the gap so text stays close to spinner */
+    #loader .loader-text { top: calc(50% + 64px); font-size: 1.2rem; font-weight: 700 }
+    #loader img#loader-spinner { width: 110px; height: 110px }
+}
+
+/* Spinner rotation (base animation) */
+@keyframes spin-base { to { transform: translate(-50%, -50%) rotate(360deg); } }
